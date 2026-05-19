@@ -38,7 +38,7 @@ export default function LeadsPage() {
 
   useEffect(() => {
     api
-      .get<{ items: Lead[] }>("/admin/leads")
+      .get<{ items: Lead[] }>("/cms/admin/leads")
       .then((d) => setItems(d.items))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -48,7 +48,7 @@ export default function LeadsPage() {
     setUpdatingId(id);
     setUpdateError(null);
     try {
-      const data = await api.patch<{ item: Lead }>(`/admin/leads/${id}`, { status });
+      const data = await api.patch<{ item: Lead }>(`/cms/admin/leads/${id}`, { status });
       setItems((prev) => prev.map((l) => (l.id === id ? data.item : l)));
     } catch (e) {
       setUpdateError(e instanceof ApiError ? e.message : "Erro ao atualizar status");

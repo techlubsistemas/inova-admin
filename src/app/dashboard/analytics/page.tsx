@@ -28,7 +28,7 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     api
-      .get<Summary>("/admin/analytics/summary")
+      .get<Summary>("/cms/admin/analytics/summary")
       .then((d) => setData(d))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));

@@ -55,7 +55,7 @@ export default function ContaPage() {
     setServerError(null);
     setSuccess(false);
     try {
-      await api.post("/admin/change-password", {
+      await api.post("/cms/admin/change-password", {
         currentPassword: data.currentPassword,
         newPassword: data.newPassword,
       });

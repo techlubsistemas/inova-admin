@@ -32,7 +32,7 @@ export default function EditSetorPage() {
 
   useEffect(() => {
     api
-      .get<{ item: SectorFull }>(`/admin/sectors/${id}`)
+      .get<{ item: SectorFull }>(`/cms/admin/sectors/${id}`)
       .then((d) => setItem(d.item))
       .catch((e) => setError(e.message));
   }, [id]);

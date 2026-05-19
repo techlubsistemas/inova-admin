@@ -7,7 +7,6 @@ import {
   FileText,
   BookOpen,
   Factory,
-  FolderArchive,
   Calculator,
   Inbox,
   BarChart3,
@@ -38,7 +37,6 @@ const groups = [
       { href: "/dashboard/articles", label: "Artigos", icon: Newspaper },
       { href: "/dashboard/glossario", label: "Glossário", icon: BookOpen },
       { href: "/dashboard/setores", label: "Setores", icon: Factory },
-      { href: "/dashboard/materiais", label: "Materiais (PDFs)", icon: FolderArchive },
     ],
   },
   {

@@ -26,7 +26,7 @@ export default function EditGlossarioPage() {
 
   useEffect(() => {
     api
-      .get<{ item: Term }>(`/admin/glossary/${id}`)
+      .get<{ item: Term }>(`/cms/admin/glossary/${id}`)
       .then((d) => setTerm(d.item))
       .catch((e) => setError(e.message));
   }, [id]);

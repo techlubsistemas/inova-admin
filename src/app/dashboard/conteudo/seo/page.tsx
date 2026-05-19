@@ -33,7 +33,7 @@ export default function SeoPage() {
 
   useEffect(() => {
     api
-      .get<{ items: Meta[] }>("/admin/seo")
+      .get<{ items: Meta[] }>("/cms/admin/seo")
       .then((d) => setItems(d.items))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -58,7 +58,7 @@ export default function SeoPage() {
     setSaving(true);
     setSaveError(null);
     try {
-      const updated = await api.put<{ item: Meta }>("/admin/seo", {
+      const updated = await api.put<{ item: Meta }>("/cms/admin/seo", {
         route,
         title: { pt: editState.titlePt, en: null },
         description: { pt: editState.descriptionPt, en: null },

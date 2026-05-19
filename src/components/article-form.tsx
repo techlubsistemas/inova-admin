@@ -122,9 +122,9 @@ export function ArticleForm({
     };
     try {
       if (mode === "create") {
-        await api.post("/admin/articles", payload);
+        await api.post("/cms/admin/articles", payload);
       } else if (id) {
-        await api.put(`/admin/articles/${id}`, payload);
+        await api.put(`/cms/admin/articles/${id}`, payload);
       }
       router.push("/dashboard/articles");
     } catch (err) {
@@ -136,7 +136,7 @@ export function ArticleForm({
     if (!id) return;
     if (!confirm("Deletar este artigo? Esta ação não pode ser desfeita.")) return;
     try {
-      await api.delete(`/admin/articles/${id}`);
+      await api.delete(`/cms/admin/articles/${id}`);
       router.push("/dashboard/articles");
     } catch (err) {
       setServerError(err instanceof ApiError ? err.message : "Erro inesperado");

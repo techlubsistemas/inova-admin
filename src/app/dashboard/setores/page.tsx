@@ -31,7 +31,7 @@ export default function SetoresPage() {
 
   useEffect(() => {
     api
-      .get<{ items: Sector[] }>("/admin/sectors")
+      .get<{ items: Sector[] }>("/cms/admin/sectors")
       .then((d) => setItems(d.items))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));

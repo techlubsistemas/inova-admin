@@ -143,9 +143,9 @@ export function CaseForm({
 
     try {
       if (mode === "create") {
-        await api.post("/admin/cases", payload);
+        await api.post("/cms/admin/cases", payload);
       } else if (id) {
-        await api.put(`/admin/cases/${id}`, payload);
+        await api.put(`/cms/admin/cases/${id}`, payload);
       }
       router.push("/dashboard/cases");
     } catch (err) {
@@ -157,7 +157,7 @@ export function CaseForm({
     if (!id) return;
     if (!confirm("Deletar este case? Esta ação não pode ser desfeita.")) return;
     try {
-      await api.delete(`/admin/cases/${id}`);
+      await api.delete(`/cms/admin/cases/${id}`);
       router.push("/dashboard/cases");
     } catch (err) {
       setServerError(err instanceof ApiError ? err.message : "Erro inesperado");

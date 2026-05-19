@@ -140,7 +140,7 @@ export type AdminUser = {
 
 export async function login(email: string, password: string) {
   const data = await api.post<{ token: string; user: AdminUser }>(
-    "/auth/login",
+    "/cms/auth/login",
     { email, password },
     { credentials: "omit" },
   );
@@ -149,13 +149,13 @@ export async function login(email: string, password: string) {
 }
 
 export async function me(): Promise<AdminUser> {
-  const data = await api.get<{ user: AdminUser }>("/admin/me");
+  const data = await api.get<{ user: AdminUser }>("/cms/admin/me");
   return data.user;
 }
 
 export async function logout() {
   try {
-    await api.post("/auth/logout");
+    await api.post("/cms/auth/logout");
   } catch {
     // ignore
   } finally {

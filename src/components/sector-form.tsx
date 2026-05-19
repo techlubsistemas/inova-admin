@@ -132,9 +132,9 @@ export function SectorForm({
 
     try {
       if (mode === "create") {
-        await api.post("/admin/sectors", payload);
+        await api.post("/cms/admin/sectors", payload);
       } else if (id) {
-        await api.put(`/admin/sectors/${id}`, payload);
+        await api.put(`/cms/admin/sectors/${id}`, payload);
       }
       router.push("/dashboard/setores");
     } catch (err) {
@@ -146,7 +146,7 @@ export function SectorForm({
     if (!id) return;
     if (!confirm("Deletar este setor? Esta ação não pode ser desfeita.")) return;
     try {
-      await api.delete(`/admin/sectors/${id}`);
+      await api.delete(`/cms/admin/sectors/${id}`);
       router.push("/dashboard/setores");
     } catch (err) {
       setServerError(err instanceof ApiError ? err.message : "Erro inesperado");

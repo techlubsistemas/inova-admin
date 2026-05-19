@@ -26,7 +26,7 @@ export default function GlossarioPage() {
 
   useEffect(() => {
     api
-      .get<{ items: Term[] }>("/admin/glossary")
+      .get<{ items: Term[] }>("/cms/admin/glossary")
       .then((d) => setItems(d.items))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));

@@ -29,7 +29,7 @@ export default function CasesPage() {
 
   useEffect(() => {
     api
-      .get<{ items: Case[]; total: number }>("/admin/cases")
+      .get<{ items: Case[]; total: number }>("/cms/admin/cases")
       .then((d) => setItems(d.items))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));

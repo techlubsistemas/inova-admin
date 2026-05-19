@@ -42,7 +42,7 @@ export default function EditCasePage() {
   useEffect(() => {
     console.log("[edit-case] mount, id =", id);
     api
-      .get<{ item: CaseFull }>(`/admin/cases/${id}`)
+      .get<{ item: CaseFull }>(`/cms/admin/cases/${id}`)
       .then((d) => {
         console.log("[edit-case] GET ok, item:", d.item);
         setItem(d.item);

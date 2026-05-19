@@ -34,7 +34,7 @@ export default function EditArticlePage() {
 
   useEffect(() => {
     api
-      .get<{ item: ArticleFull }>(`/admin/articles/${id}`)
+      .get<{ item: ArticleFull }>(`/cms/admin/articles/${id}`)
       .then((d) => setItem(d.item))
       .catch((e) => setError(e.message));
   }, [id]);

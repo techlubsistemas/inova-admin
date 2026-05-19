@@ -99,9 +99,9 @@ export function GlossaryForm({
     };
     try {
       if (mode === "create") {
-        await api.post("/admin/glossary", payload);
+        await api.post("/cms/admin/glossary", payload);
       } else if (id) {
-        await api.put(`/admin/glossary/${id}`, payload);
+        await api.put(`/cms/admin/glossary/${id}`, payload);
       }
       router.push("/dashboard/glossario");
     } catch (err) {
@@ -113,7 +113,7 @@ export function GlossaryForm({
     if (!id) return;
     if (!confirm("Deletar este termo? Esta ação não pode ser desfeita.")) return;
     try {
-      await api.delete(`/admin/glossary/${id}`);
+      await api.delete(`/cms/admin/glossary/${id}`);
       router.push("/dashboard/glossario");
     } catch (err) {
       setServerError(err instanceof ApiError ? err.message : "Erro inesperado");

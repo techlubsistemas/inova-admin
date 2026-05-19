@@ -31,7 +31,7 @@ export default function ArticlesPage() {
 
   useEffect(() => {
     api
-      .get<{ items: Article[] }>("/admin/articles")
+      .get<{ items: Article[] }>("/cms/admin/articles")
       .then((d) => setItems(d.items))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));

@@ -1,5 +1,4 @@
-// Visualizador leve para o JSON estruturado de SiteSetting/PageMetadata.
-// Modo leitura (Fase 1). Edição via TipTap/forms entra nas próximas fases.
+// Visualizador leve (read-only) para o JSON estruturado de SiteSetting/PageMetadata.
 
 import { tx } from "@/lib/i18n";
 
@@ -23,20 +22,19 @@ function render(value: Value, depth = 0): React.ReactNode {
     (typeof (value as { pt: unknown }).pt === "string" ||
       (value as { pt: unknown }).pt === null)
   ) {
+    const i18n = value as unknown as { pt: string; en: string | null };
     return (
       <div className="space-y-0.5">
         <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
           pt
         </div>
-        <div className="text-sm">{tx(value as { pt: string; en: string | null })}</div>
-        {(value as { en: string | null }).en && (
+        <div className="text-sm">{tx(i18n)}</div>
+        {i18n.en && (
           <>
             <div className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
               en
             </div>
-            <div className="text-sm text-foreground/70">
-              {(value as { en: string }).en}
-            </div>
+            <div className="text-sm text-foreground/70">{i18n.en}</div>
           </>
         )}
       </div>

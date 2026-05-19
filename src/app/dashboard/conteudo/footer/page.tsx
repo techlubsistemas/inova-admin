@@ -3,11 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/page-header";
-import { ComingSoon } from "@/components/coming-soon";
-import { JsonPreview } from "@/components/json-preview";
-import { Card, CardContent } from "@/components/ui/card";
-
-type Setting = { key: string; value: unknown };
+import { SettingEditor, type Setting } from "@/components/setting-editor";
 
 export default function FooterPage() {
   const [setting, setSetting] = useState<Setting | null>(null);
@@ -16,7 +12,7 @@ export default function FooterPage() {
 
   useEffect(() => {
     api
-      .get<{ item: Setting }>("/admin/settings/footer")
+      .get<{ item: Setting }>("/cms/admin/settings/footer")
       .then((d) => setSetting(d.item))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -33,19 +29,16 @@ export default function FooterPage() {
       {error && <div className="text-sm text-destructive">{error}</div>}
 
       {setting && (
-        <Card>
-          <CardContent className="p-6">
-            <JsonPreview value={setting.value} />
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="mt-8">
-        <ComingSoon
-          fase="Fase 3"
-          description="Editor do footer com forms para email/telefone/endereço, gerenciar colunas de links e redes sociais."
+        <SettingEditor
+          item={setting}
+          meta={{
+            label: "Footer",
+            description:
+              "Campos esperados: brand{logoUrl,description}, columns[{title,links[{label,href}]}], contact{email,phone,address}, socials[{icon,href}].",
+          }}
+          onSaved={setSetting}
         />
-      </div>
+      )}
     </div>
   );
 }
