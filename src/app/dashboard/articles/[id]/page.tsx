@@ -19,7 +19,7 @@ type ArticleFull = {
   tempoLeituraMin: number;
   heroImageUrl: string | null;
   destaque: boolean;
-  content: unknown[];
+  content: unknown;
   seoTitle: { pt: string; en: string | null } | null;
   seoDescription: { pt: string; en: string | null } | null;
   ogImageUrl: string | null;
@@ -42,6 +42,13 @@ export default function EditArticlePage() {
   if (error) return <div className="text-sm text-destructive">{error}</div>;
   if (!item) return <div className="text-sm text-muted-foreground">Carregando...</div>;
 
+  const content = Array.isArray(item.content)
+    ? item.content
+    : item.content && typeof item.content === "object" &&
+        Array.isArray((item.content as Record<string, unknown>).pt)
+      ? (item.content as Record<string, unknown>).pt
+      : [];
+
   return (
     <div>
       <PageHeader
@@ -63,7 +70,7 @@ export default function EditArticlePage() {
           tempoLeituraMin: item.tempoLeituraMin,
           heroImageUrl: item.heroImageUrl ?? "",
           destaque: item.destaque,
-          contentJson: JSON.stringify(item.content ?? [], null, 2),
+          contentJson: JSON.stringify(content, null, 2),
           seoTitleText: item.seoTitle?.pt ?? "",
           seoDescriptionText: item.seoDescription?.pt ?? "",
           ogImageUrl: item.ogImageUrl ?? "",
