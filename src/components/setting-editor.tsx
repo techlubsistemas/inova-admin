@@ -37,6 +37,7 @@ export function SettingEditor({
   item,
   previewable,
   defaultOpen = true,
+  defaults,
   renderExtra,
   validate,
   onSaved,
@@ -47,12 +48,14 @@ export function SettingEditor({
   item: Setting | null;
   previewable?: boolean;
   defaultOpen?: boolean;
+  /** Valores iniciais dos campos que a API exige e ainda não existem no valor salvo. */
+  defaults?: Obj;
   /** Conteúdo extra (ex.: editor de blocos) abaixo dos campos do esquema. */
   renderExtra?: (value: Obj, setValue: (next: Obj) => void) => React.ReactNode;
   validate?: (value: Obj) => string | null;
   onSaved?: (updated: Setting) => void;
 }) {
-  const initial = asObj(item?.value);
+  const initial = { ...defaults, ...asObj(item?.value) };
   const [value, setValue] = useState<Obj>(initial);
   const [savedJson, setSavedJson] = useState(JSON.stringify(initial));
   const [exists, setExists] = useState(item !== null);

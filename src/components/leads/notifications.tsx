@@ -44,6 +44,7 @@ export function LeadNotifications() {
         }}
         schema={schema}
         item={map.lead_notifications ?? null}
+        defaults={{ enabled: false, emails: [] }}
         validate={(v) => {
           const emails = Array.isArray(v.emails) ? (v.emails as unknown[]) : [];
           const bad = emails.find((e) => typeof e !== "string" || !EMAIL_RE.test(e.trim()));
