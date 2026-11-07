@@ -53,6 +53,19 @@ const INPUT_LABELS: Record<string, string> = {
   custoParadaHora: "Custo da parada por hora (R$)",
   consumoLubrificanteAno: "Consumo de lubrificante (L/ano)",
   nivelContaminacao: "Nível de contaminação",
+  // Resultado calculado (CalculatorResult do site)
+  perdaAnualEstimada: "Perda anual estimada",
+  perdaPorParada: "Perda por parada",
+  paradasAnuaisEstimadas: "Paradas por ano",
+  desperdicioLubrificante: "Desperdício de lubrificante",
+  potencialEconomia: "Potencial de economia",
+  economiaMin: "Economia mínima",
+  economiaMax: "Economia máxima",
+  mtbfAtual: "MTBF atual",
+  mtbfPotencial: "MTBF potencial",
+  setorBenchmark: "Referência do setor",
+  lossFactor: "Fator de perda",
+  mtbfTarget: "Meta de MTBF",
 };
 
 function labelFor(key: string) {
@@ -209,7 +222,7 @@ export function CalculatorLeads() {
       {error && <Notice tone="error">{error}</Notice>}
 
       <div className="overflow-hidden rounded-lg border bg-card">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-sm">
           <thead className="bg-muted/50">
             <tr className="text-left text-xs font-medium text-muted-foreground">
               <th className="px-4 py-2">Data</th>
@@ -254,7 +267,7 @@ export function CalculatorLeads() {
               </tr>
             )}
           </tbody>
-        </table>
+        </table></div>
         <Pager page={page} pageSize={PAGE_SIZE} total={total} onPage={setPage} noun="leads" />
       </div>
 
