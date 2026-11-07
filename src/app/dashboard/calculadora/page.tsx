@@ -1,526 +1,153 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api, ApiError } from "@/lib/api";
+import { api } from "@/lib/api";
+import { SETORES } from "@/lib/taxonomy";
 import { PageHeader } from "@/components/page-header";
-import { Button } from "@/components/ui/button";
+import { Notice } from "@/components/structured/ui";
+import { ContaminationCard } from "@/components/calculator/contamination-card";
+import { CopyCard } from "@/components/calculator/copy-card";
+import { GridCard, type GridCol, type GridRow } from "@/components/calculator/grid-card";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  CONTAMINACAO,
+  asObj,
+  saveCalcConfig,
+  type CalcConfig,
+} from "@/components/calculator/shared";
 
-type MultiplierRow = { lossFactor: number; mtbfTarget: number };
-type DefaultsRow = {
-  ativosCriticos: number;
-  horasAnoOperacao: number;
-  mtbfMeses: number;
-  custoParadaHora: number;
-  consumoLubrificanteAno: number;
-  nivelContaminacao: string;
-};
-type Config = {
-  id: string;
-  multipliers: Record<string, MultiplierRow>;
-  defaults: Record<string, DefaultsRow>;
-  genericDefaults: DefaultsRow;
-  contaminationMultipliers: Record<string, number>;
-  copy: Record<string, unknown>;
-  updatedAt: string;
-};
+const MULT_COLS: GridCol[] = [
+  {
+    key: "lossFactor",
+    label: "Fator de perda",
+    help: "Multiplica a perda (1 = neutro)",
+    kind: "number",
+    rule: { positive: true, max: 100 },
+  },
+  {
+    key: "mtbfTarget",
+    label: "Meta de MTBF (meses)",
+    help: "Tempo médio entre falhas ideal",
+    kind: "number",
+    rule: { positive: true, max: 1000 },
+  },
+];
 
-const SETOR_LABELS: Record<string, string> = {
-  mineracao: "Mineração",
-  "papel-celulose": "Papel & Celulose",
-  cimento: "Cimento",
-  alimentos: "Alimentos & Bebidas",
-  siderurgia: "Siderurgia",
-  "geracao-de-energia": "Geração de Energia",
-};
+const DEFAULT_COLS: GridCol[] = [
+  { key: "ativosCriticos", label: "Ativos críticos", kind: "number", rule: { integer: true, min: 1, max: 100000 } },
+  { key: "horasAnoOperacao", label: "Horas de operação por ano", kind: "number", rule: { positive: true, max: 8784 } },
+  { key: "mtbfMeses", label: "MTBF (meses)", kind: "number", rule: { positive: true, max: 1000 } },
+  { key: "custoParadaHora", label: "Custo da parada por hora (R$)", kind: "number", rule: { min: 0, max: 1e9 } },
+  { key: "consumoLubrificanteAno", label: "Consumo de lubrificante (L/ano)", kind: "number", rule: { min: 0, max: 1e9 } },
+  { key: "nivelContaminacao", label: "Nível de contaminação", kind: "select", options: CONTAMINACAO },
+];
 
-const CONTAMINATION_LABELS: Record<string, string> = {
-  baixo: "Baixo",
-  medio: "Médio",
-  alto: "Alto",
-  critico: "Crítico",
-};
+const GENERIC_ID = "__generic__";
+
+/** Linhas: os setores do site e, depois, qualquer outro setor que já exista no banco. */
+function sectorRows(record: Record<string, unknown>): GridRow[] {
+  const ids = [...Object.keys(SETORES), ...Object.keys(record).filter((k) => !(k in SETORES))];
+  return ids.map((id) => ({
+    id,
+    label: (SETORES as Record<string, string>)[id] ?? `${id} (fora da lista)`,
+    source: asObj(record[id]),
+  }));
+}
 
 export default function CalculadoraPage() {
-  const [config, setConfig] = useState<Config | null>(null);
+  const [config, setConfig] = useState<CalcConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Mantém a última versão gravada, para os cartões enviarem só a parte que mudaram
+  // sobre os dados mais recentes (sem recriar a tela).
+  const [latest, setLatest] = useState<CalcConfig | null>(null);
 
   useEffect(() => {
     api
-      .get<{ config: Config }>("/cms/admin/calculator/config")
-      .then((d) => setConfig(d.config))
+      .get<{ config: CalcConfig | null }>("/cms/admin/calculator/config")
+      .then((d) => {
+        setConfig(d.config);
+        setLatest(d.config);
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
 
-  function onSavedSection(updated: Config) {
-    setConfig(updated);
-  }
+  const base = {
+    multipliers: asObj(latest?.multipliers),
+    defaults: asObj(latest?.defaults),
+    genericDefaults: asObj(latest?.genericDefaults),
+    contaminationMultipliers: asObj(latest?.contaminationMultipliers),
+    copy: asObj(latest?.copy),
+  };
 
   return (
     <div>
       <PageHeader
         title="Calculadora"
-        description="Configuração da calculadora de perdas. Mudanças aqui afetam imediatamente o resultado mostrado aos visitantes."
+        description="Números e textos da calculadora de perdas do site. O site usa estes valores (em produção, até 60 segundos depois de salvar); o que ficar em branco usa o valor que já vem no código."
       />
 
       {loading && <div className="text-sm text-muted-foreground">Carregando...</div>}
-      {error && <div className="text-sm text-destructive">{error}</div>}
+      {error && <Notice tone="error">{error}</Notice>}
 
-      {config && (
+      {!loading && !error && config === null && (
+        <div className="mb-4">
+          <Notice tone="warning">
+            Ainda não existe configuração da calculadora no banco (talvez o conteúdo inicial não
+            tenha sido carregado). Enquanto isso, o site usa os valores do código. Ao salvar uma
+            das seções abaixo, a configuração é criada e o site passa a usar o que você preencher,
+            campo a campo.
+          </Notice>
+        </div>
+      )}
+
+      {!loading && !error && (
         <div className="space-y-4">
-          <MultipliersEditor config={config} onSaved={onSavedSection} />
-          <ContaminationEditor config={config} onSaved={onSavedSection} />
-          <DefaultsEditor config={config} onSaved={onSavedSection} />
-          <CopyEditor config={config} onSaved={onSavedSection} />
+          <GridCard
+            title="Fatores por setor"
+            description="Fator de perda: quanto maior, maior a perda estimada para o setor. Meta de MTBF: o tempo ideal entre falhas, usado na comparação com o tempo atual."
+            rows={sectorRows(base.multipliers)}
+            cols={MULT_COLS}
+            onSave={async (merged) => {
+              const updated = await saveCalcConfig({
+                multipliers: { ...base.multipliers, ...merged },
+              });
+              setLatest(updated);
+            }}
+          />
 
-          <div className="text-xs text-muted-foreground">
-            Última atualização: {new Date(config.updatedAt).toLocaleString("pt-BR")}
-          </div>
+          <ContaminationCard
+            original={base.contaminationMultipliers}
+            onSaved={setLatest}
+          />
+
+          <GridCard
+            title="Valores usados quando a pessoa responde “Não sei”"
+            description="Valores médios que a calculadora assume quando o visitante não sabe um dado. A última linha vale quando nenhum setor foi escolhido."
+            rows={[
+              ...sectorRows(base.defaults),
+              { id: GENERIC_ID, label: "Qualquer outro caso (genérico)", source: base.genericDefaults },
+            ]}
+            cols={DEFAULT_COLS}
+            onSave={async (merged) => {
+              const { [GENERIC_ID]: generic, ...bySector } = merged;
+              const updated = await saveCalcConfig({
+                defaults: { ...base.defaults, ...bySector },
+                genericDefaults: generic,
+              });
+              setLatest(updated);
+            }}
+          />
+
+          <CopyCard original={base.copy} onSaved={setLatest} />
+
+          {latest && (
+            <div className="text-xs text-muted-foreground">
+              Última atualização: {new Date(latest.updatedAt).toLocaleString("pt-BR")}
+            </div>
+          )}
         </div>
       )}
     </div>
-  );
-}
-
-async function saveSection(
-  patch: Partial<Pick<Config, "multipliers" | "defaults" | "genericDefaults" | "contaminationMultipliers" | "copy">>,
-): Promise<Config> {
-  const data = await api.put<{ config: Config }>(
-    "/cms/admin/calculator/config",
-    patch,
-  );
-  return data.config;
-}
-
-// ============================================================
-// Multipliers (por setor)
-// ============================================================
-
-function MultipliersEditor({
-  config,
-  onSaved,
-}: {
-  config: Config;
-  onSaved: (c: Config) => void;
-}) {
-  const [draft, setDraft] = useState<Record<string, MultiplierRow>>(config.multipliers);
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [ok, setOk] = useState(false);
-
-  function update(setor: string, field: keyof MultiplierRow, value: number) {
-    setDraft((prev) => ({ ...prev, [setor]: { ...prev[setor], [field]: value } }));
-  }
-
-  async function save() {
-    setErr(null);
-    setOk(false);
-    setSaving(true);
-    try {
-      const updated = await saveSection({ multipliers: draft });
-      onSaved(updated);
-      setOk(true);
-      setTimeout(() => setOk(false), 2500);
-    } catch (e) {
-      setErr(e instanceof ApiError ? e.message : "Erro ao salvar");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Multiplicadores por setor</CardTitle>
-        <CardDescription className="text-xs">
-          `lossFactor`: multiplicador aplicado ao consumo. `mtbfTarget` (meses): meta usada na comparação MTBF atual vs ideal.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-hidden rounded border">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-left text-xs font-medium text-muted-foreground">
-              <tr>
-                <th className="px-3 py-2">Setor</th>
-                <th className="px-3 py-2 text-right">Loss factor</th>
-                <th className="px-3 py-2 text-right">MTBF target (meses)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(draft).map(([k, v]) => (
-                <tr key={k} className="border-t">
-                  <td className="px-3 py-2">{SETOR_LABELS[k] ?? k}</td>
-                  <td className="px-3 py-2">
-                    <NumberInput
-                      value={v.lossFactor}
-                      onChange={(n) => update(k, "lossFactor", n)}
-                      step={0.01}
-                    />
-                  </td>
-                  <td className="px-3 py-2">
-                    <NumberInput
-                      value={v.mtbfTarget}
-                      onChange={(n) => update(k, "mtbfTarget", n)}
-                      step={1}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <SectionActions
-          saving={saving}
-          err={err}
-          ok={ok}
-          onSave={save}
-          onRevert={() => setDraft(config.multipliers)}
-        />
-      </CardContent>
-    </Card>
-  );
-}
-
-// ============================================================
-// Contamination multipliers
-// ============================================================
-
-function ContaminationEditor({
-  config,
-  onSaved,
-}: {
-  config: Config;
-  onSaved: (c: Config) => void;
-}) {
-  const [draft, setDraft] = useState<Record<string, number>>(config.contaminationMultipliers);
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [ok, setOk] = useState(false);
-
-  async function save() {
-    setErr(null);
-    setOk(false);
-    setSaving(true);
-    try {
-      const updated = await saveSection({ contaminationMultipliers: draft });
-      onSaved(updated);
-      setOk(true);
-      setTimeout(() => setOk(false), 2500);
-    } catch (e) {
-      setErr(e instanceof ApiError ? e.message : "Erro ao salvar");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Multiplicadores de contaminação</CardTitle>
-        <CardDescription className="text-xs">
-          Fator aplicado quando o usuário declara um nível de contaminação no equipamento.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {Object.entries(draft).map(([k, v]) => (
-            <div key={k} className="rounded border bg-muted/20 px-3 py-2">
-              <div className="text-xs uppercase text-muted-foreground">
-                {CONTAMINATION_LABELS[k] ?? k}
-              </div>
-              <NumberInput
-                value={v}
-                onChange={(n) => setDraft((prev) => ({ ...prev, [k]: n }))}
-                step={0.01}
-                className="mt-1 w-full text-right text-lg font-mono"
-              />
-            </div>
-          ))}
-        </div>
-        <SectionActions
-          saving={saving}
-          err={err}
-          ok={ok}
-          onSave={save}
-          onRevert={() => setDraft(config.contaminationMultipliers)}
-        />
-      </CardContent>
-    </Card>
-  );
-}
-
-// ============================================================
-// Defaults por setor
-// ============================================================
-
-const DEFAULTS_COLS: { key: keyof DefaultsRow; label: string; type: "number" | "text" }[] = [
-  { key: "ativosCriticos", label: "Ativos críticos", type: "number" },
-  { key: "horasAnoOperacao", label: "Horas/ano", type: "number" },
-  { key: "mtbfMeses", label: "MTBF (meses)", type: "number" },
-  { key: "custoParadaHora", label: "Custo parada/h (R$)", type: "number" },
-  { key: "consumoLubrificanteAno", label: "Consumo lubrif. (L/ano)", type: "number" },
-  { key: "nivelContaminacao", label: "Contaminação", type: "text" },
-];
-
-function DefaultsEditor({
-  config,
-  onSaved,
-}: {
-  config: Config;
-  onSaved: (c: Config) => void;
-}) {
-  const [draft, setDraft] = useState<Record<string, DefaultsRow>>(config.defaults);
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [ok, setOk] = useState(false);
-
-  function update(setor: string, field: keyof DefaultsRow, value: string | number) {
-    setDraft((prev) => ({
-      ...prev,
-      [setor]: { ...prev[setor], [field]: value },
-    }));
-  }
-
-  async function save() {
-    setErr(null);
-    setOk(false);
-    setSaving(true);
-    try {
-      const updated = await saveSection({ defaults: draft });
-      onSaved(updated);
-      setOk(true);
-      setTimeout(() => setOk(false), 2500);
-    } catch (e) {
-      setErr(e instanceof ApiError ? e.message : "Erro ao salvar");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">
-          Defaults por setor (quando o usuário responde &quot;Não sei&quot;)
-        </CardTitle>
-        <CardDescription className="text-xs">
-          Valores médios usados quando o lead opta por não preencher campos técnicos.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto rounded border">
-          <table className="w-full text-xs">
-            <thead className="bg-muted/50 text-left font-medium text-muted-foreground">
-              <tr>
-                <th className="px-3 py-2">Setor</th>
-                {DEFAULTS_COLS.map((c) => (
-                  <th key={c.key} className="px-3 py-2">
-                    {c.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="font-mono">
-              {Object.entries(draft).map(([k, v]) => (
-                <tr key={k} className="border-t">
-                  <td className="px-3 py-2 font-sans">{SETOR_LABELS[k] ?? k}</td>
-                  {DEFAULTS_COLS.map((c) => (
-                    <td key={c.key} className="px-3 py-2">
-                      {c.type === "number" ? (
-                        <NumberInput
-                          value={v[c.key] as number}
-                          onChange={(n) => update(k, c.key, n)}
-                          step={1}
-                          className="w-28 text-right"
-                        />
-                      ) : (
-                        <TextInput
-                          value={v[c.key] as string}
-                          onChange={(s) => update(k, c.key, s)}
-                          className="w-24"
-                        />
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <SectionActions
-          saving={saving}
-          err={err}
-          ok={ok}
-          onSave={save}
-          onRevert={() => setDraft(config.defaults)}
-        />
-      </CardContent>
-    </Card>
-  );
-}
-
-// ============================================================
-// Copy (textos das etapas) — editor JSON
-// ============================================================
-
-function CopyEditor({
-  config,
-  onSaved,
-}: {
-  config: Config;
-  onSaved: (c: Config) => void;
-}) {
-  const [text, setText] = useState(JSON.stringify(config.copy, null, 2));
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [ok, setOk] = useState(false);
-
-  async function save() {
-    setErr(null);
-    setOk(false);
-    let parsed: Record<string, unknown>;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      setErr("JSON inválido. Confira chaves, vírgulas e aspas.");
-      return;
-    }
-    setSaving(true);
-    try {
-      const updated = await saveSection({ copy: parsed });
-      onSaved(updated);
-      setOk(true);
-      setTimeout(() => setOk(false), 2500);
-    } catch (e) {
-      setErr(e instanceof ApiError ? e.message : "Erro ao salvar");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Textos das etapas (copy)</CardTitle>
-        <CardDescription className="text-xs">
-          Estrutura livre — títulos, subtítulos, labels de campos e mensagens da calculadora.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          rows={14}
-          className="flex w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs"
-          spellCheck={false}
-        />
-        <SectionActions
-          saving={saving}
-          err={err}
-          ok={ok}
-          onSave={save}
-          onRevert={() => setText(JSON.stringify(config.copy, null, 2))}
-        />
-      </CardContent>
-    </Card>
-  );
-}
-
-// ============================================================
-// Shared inputs / actions
-// ============================================================
-
-function NumberInput({
-  value,
-  onChange,
-  step = 1,
-  className,
-}: {
-  value: number;
-  onChange: (n: number) => void;
-  step?: number;
-  className?: string;
-}) {
-  return (
-    <input
-      type="number"
-      value={value}
-      step={step}
-      onChange={(e) => {
-        const n = Number(e.target.value);
-        if (!Number.isNaN(n)) onChange(n);
-      }}
-      className={
-        className ??
-        "w-24 rounded border border-input bg-background px-2 py-1 text-right font-mono text-sm"
-      }
-    />
-  );
-}
-
-function TextInput({
-  value,
-  onChange,
-  className,
-}: {
-  value: string;
-  onChange: (s: string) => void;
-  className?: string;
-}) {
-  return (
-    <input
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className={
-        className ??
-        "rounded border border-input bg-background px-2 py-1 font-mono text-sm"
-      }
-    />
-  );
-}
-
-function SectionActions({
-  saving,
-  err,
-  ok,
-  onSave,
-  onRevert,
-}: {
-  saving: boolean;
-  err: string | null;
-  ok: boolean;
-  onSave: () => void;
-  onRevert: () => void;
-}) {
-  return (
-    <>
-      {err && (
-        <p className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-          {err}
-        </p>
-      )}
-      {ok && (
-        <p className="mt-2 rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-xs text-primary">
-          Salvo.
-        </p>
-      )}
-      <div className="mt-3 flex gap-2">
-        <Button size="sm" onClick={onSave} disabled={saving}>
-          {saving ? "Salvando…" : "Salvar"}
-        </Button>
-        <Button size="sm" variant="outline" onClick={onRevert}>
-          Reverter
-        </Button>
-      </div>
-    </>
   );
 }
