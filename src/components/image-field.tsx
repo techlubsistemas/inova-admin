@@ -10,6 +10,19 @@ import { Input } from "@/components/ui/input";
 const MAX_BYTES = 10 * 1024 * 1024;
 const TYPES = ["image/png", "image/jpeg", "image/webp", "image/svg+xml", "image/gif"];
 
+/** Endereço externo (http/https) fora dos hosts de imagem que o site aceita por padrão. */
+function isUnlistedExternal(value: string): boolean {
+  const v = value.trim();
+  if (!/^(https?:)?\/\//i.test(v)) return false;
+  try {
+    const host = new URL(v.startsWith("//") ? `https:${v}` : v).hostname.toLowerCase();
+    return !(host.endsWith(".r2.dev") || host.endsWith(".r2.cloudflarestorage.com"));
+  } catch {
+    // Ainda sendo digitado (ex.: "https://"): sem aviso até ficar um endereço completo.
+    return false;
+  }
+}
+
 /**
  * Campo de imagem: envio de arquivo, endereço manual, miniatura e remoção.
  * O valor é sempre texto (endereço da imagem); vazio = sem imagem.
@@ -29,6 +42,8 @@ export function ImageField({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [broken, setBroken] = useState(false);
+  // Aviso de endereço só para o que a pessoa digitou (não para o que o envio devolve).
+  const [typed, setTyped] = useState(false);
 
   async function onFile(file: File | undefined) {
     if (!file) return;
@@ -47,6 +62,7 @@ export function ImageField({
       form.append("file", file);
       const res = await api.upload<{ url: string }>("/cms/admin/uploads", form);
       setBroken(false);
+      setTyped(false);
       onChange(res.url);
     } catch (e) {
       setError(
@@ -61,6 +77,7 @@ export function ImageField({
   }
 
   const src = imageSrc(value);
+  const hostWarning = typed && isUnlistedExternal(value);
 
   return (
     <div className="space-y-2">
@@ -90,6 +107,7 @@ export function ImageField({
             placeholder="Cole o endereço da imagem (https://… ou /arquivo.png)"
             onChange={(e) => {
               setBroken(false);
+              setTyped(true);
               onChange(e.target.value);
             }}
           />
@@ -119,6 +137,7 @@ export function ImageField({
                 disabled={disabled || uploading}
                 onClick={() => {
                   setError(null);
+                  setTyped(false);
                   onChange("");
                 }}
               >
@@ -132,6 +151,13 @@ export function ImageField({
           </div>
         </div>
       </div>
+      {hostWarning && (
+        <p className="text-[11px] text-muted-foreground">
+          Para aparecer no site, o endereço precisa ser de *.r2.dev, *.r2.cloudflarestorage.com
+          ou de um dos endereços liberados no site. Fora disso, a imagem pode não carregar.
+          Se preferir, use &quot;Enviar imagem&quot;.
+        </p>
+      )}
       {broken && value && !error && (
         <p className="text-xs text-yellow-800">
           Não foi possível mostrar a miniatura. Confira o endereço (caminhos que
