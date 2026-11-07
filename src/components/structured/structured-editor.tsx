@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { Input } from "@/components/ui/input";
 import { ImageField } from "@/components/image-field";
 import { OptionSelect } from "@/components/option-select";
@@ -49,8 +50,10 @@ export function StructuredEditor({
   onChange: (next: Obj) => void;
 }) {
   const obj = isObj(value) ? value : {};
+  // Prefixo único por instância: vários editores na mesma tela não repetem ids.
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   return (
-    <FieldsGroup fields={schema} value={obj} onChange={onChange} path="root" />
+    <FieldsGroup fields={schema} value={obj} onChange={onChange} path={`se${uid}`} />
   );
 }
 
