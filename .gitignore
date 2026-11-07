@@ -8,5 +8,5 @@ build
 .DS_Store
 *.log
 next-env.d.ts
-# Vídeos das aulas: pesados demais para o repositório.
+# Cópias locais dos vídeos das aulas, antes de subir para o armazenamento.
 public/aulas/*.mp4

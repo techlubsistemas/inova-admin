@@ -25,5 +25,3 @@ O painel roda na porta **3001** (`npm run dev`).
 - `NEXT_PUBLIC_SITE_URL` (opcional): endereço público do site, usado nos botões
   "Pré-visualizar" e nos links dos formulários. Sem ela, usa
   `https://www.inovaengenharia.net.br`.
-- `NEXT_PUBLIC_AULAS_URL` (opcional): endereço onde ficam os vídeos da tela Aulas
-  (`<endereço>/<id>.mp4`). Sem a variável, usa a pasta `public/aulas` do painel.

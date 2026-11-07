@@ -1,6 +1,6 @@
 /**
  * Aulas em vídeo do painel. Lista fixa: para acrescentar uma aula, inclua aqui e publique
- * o arquivo `<id>.mp4` no endereço de NEXT_PUBLIC_AULAS_URL.
+ * o arquivo `<id>.mp4` em AULAS_URL.
  */
 export type Aula = {
   id: string;
@@ -61,8 +61,8 @@ export const AULAS: Aula[] = [
   },
 ];
 
-/** Onde os vídeos ficam. Opcional: sem a variável, usa a pasta public/aulas do painel. */
-const AULAS_URL = (process.env.NEXT_PUBLIC_AULAS_URL || "/aulas").replace(/\/+$/, "");
+/** Pasta pública do armazenamento (Cloudflare R2) onde os vídeos ficam. */
+const AULAS_URL = "https://pub-fd384ac772c0416ba9e7e1248ad79121.r2.dev/aulas-painel";
 
 export function aulaUrl(id: string) {
   return `${AULAS_URL}/${id}.mp4`;
