@@ -1,81 +1,44 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
 import { PageHeader } from "@/components/page-header";
-import { SettingEditor, type Setting } from "@/components/setting-editor";
-
-const HOME_KEYS: Record<string, { label: string; description: string }> = {
-  hero: {
-    label: "Hero (topo da home)",
-    description:
-      "Eyebrow, título, descrição, CTAs e estatísticas. Campos suportados: eyebrow, titleLine1, titleHighlight, titleLine2, description, ctaPrimary{label,href}, ctaSecondary{label,href}, backgroundImage, stats[{value,label}].",
-  },
-  authority: {
-    label: "Autoridade",
-    description: "6 pilares + métricas-chave.",
-  },
-  results: {
-    label: "Soluções (Results)",
-    description: "Inov.IA, Análise de Lubrificantes, Diagnóstico.",
-  },
-  projects_highlight: {
-    label: "Case em destaque (Projects)",
-    description: "Card grande na home.",
-  },
-  cta_cards: {
-    label: "CTAs (2 caminhos)",
-    description: "Consultoria humana × Plataforma Inov.IA.",
-  },
-  testimonials: {
-    label: "Timeline (Milestones)",
-    description: "3 marcos da empresa.",
-  },
-  team_partners: {
-    label: "Parceiros/Clientes",
-    description: "Logo wall.",
-  },
-};
+import { SettingEditor } from "@/components/setting-editor";
+import { Notice } from "@/components/structured/ui";
+import { HOME_SETTINGS } from "@/lib/setting-schemas";
+import { SEED_HINT, useSettings } from "@/lib/use-settings";
 
 export default function ContentHomePage() {
-  const [items, setItems] = useState<Setting[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    api
-      .get<{ items: Setting[] }>("/cms/admin/settings")
-      .then((d) => setItems(d.items))
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, []);
-
-  function handleSaved(key: string, updated: Setting) {
-    setItems((prev) => prev.map((i) => (i.key === key ? updated : i)));
-  }
-
-  const homeItems = items.filter((i) => HOME_KEYS[i.key]);
+  const { items, map, loading, error } = useSettings();
 
   return (
     <div>
       <PageHeader
         title="Conteúdo da home"
-        description="Edite o JSON de cada seção. As mudanças aparecem no site após o cache ISR (até 60s em produção, instantâneo em dev)."
+        description="Edite os textos, imagens e botões de cada seção da página inicial. Em produção, o que você salvar aparece no site em até 60 segundos."
       />
 
       {loading && <div className="text-sm text-muted-foreground">Carregando...</div>}
-      {error && <div className="text-sm text-destructive">{error}</div>}
+      {error && <Notice tone="error">{error}</Notice>}
+      {!loading && !error && items.length === 0 && (
+        <div className="mb-4">
+          <Notice tone="warning">{SEED_HINT}</Notice>
+        </div>
+      )}
 
-      <div className="space-y-4">
-        {homeItems.map((item) => (
-          <SettingEditor
-            key={item.key}
-            item={item}
-            meta={HOME_KEYS[item.key]}
-            onSaved={(updated) => handleSaved(item.key, updated)}
-          />
-        ))}
-      </div>
+      {!loading && !error && (
+        <div className="space-y-4">
+          {HOME_SETTINGS.map((s, i) => (
+            <SettingEditor
+              key={s.key}
+              settingKey={s.key}
+              meta={{ label: s.label, description: s.description }}
+              schema={s.schema}
+              item={map[s.key] ?? null}
+              defaultOpen={i === 0}
+              previewable
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

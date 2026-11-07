@@ -14,6 +14,9 @@ import {
   Newspaper,
   Globe,
   User,
+  Menu,
+  Scale,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,7 +29,9 @@ const groups = [
     label: "Conteúdo do site",
     items: [
       { href: "/dashboard/conteudo/home", label: "Home", icon: Globe },
-      { href: "/dashboard/conteudo/footer", label: "Footer", icon: Settings2 },
+      { href: "/dashboard/conteudo/footer", label: "Rodapé", icon: Settings2 },
+      { href: "/dashboard/conteudo/menu", label: "Menu do topo", icon: Menu },
+      { href: "/dashboard/conteudo/legal", label: "Páginas legais", icon: Scale },
       { href: "/dashboard/conteudo/seo", label: "SEO por página", icon: FileText },
     ],
   },
@@ -43,6 +48,7 @@ const groups = [
     label: "Operação",
     items: [
       { href: "/dashboard/calculadora", label: "Calculadora", icon: Calculator },
+      { href: "/dashboard/formularios", label: "Formulários", icon: ClipboardList },
       { href: "/dashboard/leads", label: "Leads", icon: Inbox },
       { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
     ],

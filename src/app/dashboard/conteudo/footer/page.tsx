@@ -1,42 +1,40 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
 import { PageHeader } from "@/components/page-header";
-import { SettingEditor, type Setting } from "@/components/setting-editor";
+import { SettingEditor } from "@/components/setting-editor";
+import { Notice } from "@/components/structured/ui";
+import { footerSchema } from "@/lib/setting-schemas";
+import { SEED_HINT, useSettings } from "@/lib/use-settings";
 
 export default function FooterPage() {
-  const [setting, setSetting] = useState<Setting | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    api
-      .get<{ item: Setting }>("/cms/admin/settings/footer")
-      .then((d) => setSetting(d.item))
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, []);
+  const { items, map, loading, error } = useSettings();
 
   return (
     <div>
       <PageHeader
-        title="Footer"
-        description="Rodapé global: logo, colunas de links, contato, redes sociais."
+        title="Rodapé"
+        description="Rodapé que aparece em todas as páginas do site: logo, colunas de links, contato e redes sociais."
       />
 
       {loading && <div className="text-sm text-muted-foreground">Carregando...</div>}
-      {error && <div className="text-sm text-destructive">{error}</div>}
+      {error && <Notice tone="error">{error}</Notice>}
+      {!loading && !error && items.length === 0 && (
+        <div className="mb-4">
+          <Notice tone="warning">{SEED_HINT}</Notice>
+        </div>
+      )}
 
-      {setting && (
+      {!loading && !error && (
         <SettingEditor
-          item={setting}
+          settingKey="footer"
           meta={{
-            label: "Footer",
+            label: "Rodapé",
             description:
-              "Campos esperados: brand{logoUrl,description}, columns[{title,links[{label,href}]}], contact{email,phone,address}, socials[{icon,href}].",
+              "Vale para todas as páginas. Em produção, a mudança aparece em até 60 segundos.",
           }}
-          onSaved={setSetting}
+          schema={footerSchema}
+          item={map.footer ?? null}
+          previewable
         />
       )}
     </div>
