@@ -148,7 +148,7 @@ export function QuizLeads() {
       {error && <Notice tone="error">{error}</Notice>}
 
       <div className="overflow-hidden rounded-lg border bg-card">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-sm">
           <thead className="bg-muted/50">
             <tr className="text-left text-xs font-medium text-muted-foreground">
               <th className="px-4 py-2">Data</th>
@@ -195,7 +195,7 @@ export function QuizLeads() {
               </tr>
             )}
           </tbody>
-        </table>
+        </table></div>
         <Pager page={page} pageSize={PAGE_SIZE} total={total} onPage={setPage} noun="diagnósticos" />
       </div>
 

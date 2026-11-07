@@ -16,6 +16,8 @@ export default function DashboardLayout({
   const [user, setUser] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [networkError, setNetworkError] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -51,11 +53,11 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-muted/20">
-      <Sidebar />
-      <div className="flex flex-1 flex-col">
-        <Topbar user={user} />
+      <Sidebar open={menuOpen} onClose={closeMenu} />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Topbar user={user} menuOpen={menuOpen} onMenuClick={() => setMenuOpen((o) => !o)} />
         {networkError && (
-          <div className="flex items-center justify-between gap-3 border-b border-yellow-300 bg-yellow-50 px-6 py-2 text-sm text-yellow-900">
+          <div className="flex items-center justify-between gap-3 border-b border-yellow-300 bg-yellow-50 px-4 py-2 sm:px-6 text-sm text-yellow-900">
             <span>
               Não foi possível confirmar sua sessão com o servidor. Você continua
               conectado, mas o painel pode não carregar os dados.
@@ -65,7 +67,7 @@ export default function DashboardLayout({
             </Button>
           </div>
         )}
-        <main className="min-w-0 flex-1 p-8">{children}</main>
+        <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );
