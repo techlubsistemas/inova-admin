@@ -34,10 +34,10 @@ const MULT_COLS: GridCol[] = [
 
 const DEFAULT_COLS: GridCol[] = [
   { key: "ativosCriticos", label: "Ativos críticos", kind: "number", rule: { integer: true, min: 1, max: 100000 } },
-  { key: "horasAnoOperacao", label: "Horas de operação por ano", kind: "number", rule: { positive: true, max: 8784 } },
-  { key: "mtbfMeses", label: "MTBF (meses)", kind: "number", rule: { positive: true, max: 1000 } },
-  { key: "custoParadaHora", label: "Custo da parada por hora (R$)", kind: "number", rule: { min: 0, max: 1e9 } },
-  { key: "consumoLubrificanteAno", label: "Consumo de lubrificante (L/ano)", kind: "number", rule: { min: 0, max: 1e9 } },
+  { key: "horasAnoOperacao", label: "Horas de operação por ano", kind: "number", rule: { min: 1, max: 8784 } },
+  { key: "mtbfMeses", label: "MTBF (meses)", kind: "number", rule: { min: 1, max: 1000 } },
+  { key: "custoParadaHora", label: "Custo da parada por hora (R$)", kind: "number", rule: { min: 1, max: 1e9 } },
+  { key: "consumoLubrificanteAno", label: "Consumo de lubrificante (L/ano)", kind: "number", rule: { min: 1, max: 1e9 } },
   { key: "nivelContaminacao", label: "Nível de contaminação", kind: "select", options: CONTAMINACAO },
 ];
 
