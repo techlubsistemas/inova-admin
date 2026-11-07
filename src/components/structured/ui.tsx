@@ -155,7 +155,7 @@ export function Notice({
     info: "border-blue-200 bg-blue-50 text-blue-900",
     warning: "border-yellow-300 bg-yellow-50 text-yellow-900",
     error: "border-destructive/30 bg-destructive/10 text-destructive",
-    success: "border-primary/30 bg-primary/10 text-primary",
+    success: "border-green-300 bg-green-50 text-green-900",
   }[tone];
   return <div className={`rounded-md border px-3 py-2 text-xs ${cls}`}>{children}</div>;
 }
