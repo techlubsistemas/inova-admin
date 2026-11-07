@@ -1,5 +1,5 @@
 // Cliente HTTP simples para a inova-api.
-// Lê o token JWT do cookie (admin_token), grava após login, e envia em todo request.
+// Lê o token JWT do cookie (inova_admin_token), grava após login, e envia em todo request.
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
 
@@ -44,31 +44,40 @@ export class ApiError extends Error {
   }
 }
 
+function authHeaders(headers: Headers, auth?: boolean) {
+  if (auth !== false) {
+    const token = getToken();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+  }
+}
+
+/** Junta mensagens do Nest (string ou lista) em um texto só. */
+function messageOf(data: any, rawText: string | null, status: number): string {
+  const m = data?.message ?? data?.error;
+  if (Array.isArray(m)) return m.join("; ");
+  if (typeof m === "string" && m) return m;
+  if (rawText && rawText.length < 300 && !rawText.trim().startsWith("<")) return rawText;
+  return `Erro ${status}`;
+}
+
 async function request<T>(
   path: string,
   init: RequestInit & { auth?: boolean } = {},
 ): Promise<T> {
-  const method = init.method ?? "GET";
   const url = `${API_URL}${path}`;
   const headers = new Headers(init.headers);
+  // FormData define o próprio Content-Type (com o boundary): não sobrescrever.
   if (!(init.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
-  if (init.auth !== false) {
-    const token = getToken();
-    if (token) headers.set("Authorization", `Bearer ${token}`);
-    console.log(`[api] → ${method} ${url}`, { hasToken: !!token });
-  } else {
-    console.log(`[api] → ${method} ${url}`, { auth: false });
-  }
+  authHeaders(headers, init.auth);
 
   let res: Response;
   try {
     res = await fetch(url, { ...init, headers });
   } catch (err) {
-    console.error(`[api] ✖ network error on ${method} ${url}`, err);
     throw new ApiError(
-      `Falha de rede ao chamar ${path} (API offline em ${API_URL}?)`,
+      "Não foi possível falar com o servidor. Verifique a conexão e tente de novo.",
       0,
       err,
     );
@@ -84,25 +93,52 @@ async function request<T>(
         data = JSON.parse(rawText);
       }
     }
-  } catch (err) {
-    console.error(`[api] ✖ JSON parse error on ${method} ${url}`, err, { rawText });
+  } catch {
+    // corpo inválido: segue com data = null
   }
 
   if (!res.ok) {
-    console.error(`[api] ✖ ${method} ${url} → ${res.status}`, {
-      contentType,
-      data,
-      rawText,
-      headers: Object.fromEntries(res.headers.entries()),
-    });
     throw new ApiError(
-      data?.message ?? data?.error ?? rawText ?? `Erro ${res.status}`,
+      messageOf(data, rawText, res.status),
       res.status,
-      data?.details ?? rawText,
+      data?.errors ?? data?.details ?? rawText,
     );
   }
-  console.log(`[api] ✓ ${method} ${url} → ${res.status}`);
   return data as T;
+}
+
+/** Baixa um arquivo (ex.: CSV) enviando o token, e dispara o download no navegador. */
+export async function downloadFile(path: string, fallbackName: string) {
+  const headers = new Headers();
+  authHeaders(headers);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, { headers });
+  } catch {
+    throw new ApiError("Não foi possível falar com o servidor para baixar o arquivo.", 0);
+  }
+  if (!res.ok) {
+    let text = "";
+    try {
+      text = await res.text();
+    } catch {}
+    let data: any = null;
+    try {
+      data = JSON.parse(text);
+    } catch {}
+    throw new ApiError(messageOf(data, text, res.status), res.status);
+  }
+  const blob = await res.blob();
+  const disposition = res.headers.get("content-disposition") ?? "";
+  const name = /filename="?([^";]+)"?/i.exec(disposition)?.[1] ?? fallbackName;
+  const href = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = href;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(href), 1000);
 }
 
 export const api = {
@@ -128,6 +164,9 @@ export const api = {
     }),
   delete: <T>(path: string, init?: RequestInit) =>
     request<T>(path, { ...init, method: "DELETE" }),
+  /** Envia arquivo (multipart). O Content-Type é definido pelo navegador. */
+  upload: <T>(path: string, form: FormData, init?: RequestInit) =>
+    request<T>(path, { ...init, method: "POST", body: form }),
 };
 
 export type AdminUser = {

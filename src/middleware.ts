@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 // Protege as rotas /dashboard/* contra acesso sem token.
-// (Verificação real do JWT é feita pela API quando o client faz GET /admin/me.)
+// (Verificação real do JWT é feita pela API quando o client faz GET /cms/admin/me.)
 
 const PROTECTED_PREFIX = "/dashboard";
 const TOKEN_COOKIE = "inova_admin_token";
