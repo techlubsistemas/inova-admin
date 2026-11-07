@@ -45,6 +45,7 @@ export default function EditGlossarioPage() {
       <GlossaryForm
         mode="edit"
         id={term.id}
+        originalDefinicaoLonga={term.definicaoLonga}
         defaultValues={{
           slug: term.slug,
           termo: term.termo,

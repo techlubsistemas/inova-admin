@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { tx } from "@/lib/i18n";
+import { CATEGORIAS_BLOG, labelOf } from "@/lib/taxonomy";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
@@ -72,7 +73,7 @@ export default function ArticlesPage() {
               return (
                 <FilterPill
                   key={cat}
-                  label={`${cat} (${count})`}
+                  label={`${labelOf(CATEGORIAS_BLOG, cat)} (${count})`}
                   active={filter === cat}
                   onClick={() => setFilter(cat)}
                 />
@@ -89,7 +90,7 @@ export default function ArticlesPage() {
                     <div className="min-w-0 flex-1">
                       <CardTitle className="text-base">{tx(a.title)}</CardTitle>
                       <CardDescription className="mt-1 text-xs">
-                        {a.categoriaSlug} · {a.tempoLeituraMin} min · por{" "}
+                        {labelOf(CATEGORIAS_BLOG, a.categoriaSlug)} · {a.tempoLeituraMin} min · por{" "}
                         {a.autorNome} ·{" "}
                         {new Date(a.publicadoEm).toLocaleDateString("pt-BR")}
                       </CardDescription>

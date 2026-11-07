@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 
 import { api, ApiError } from "@/lib/api";
+import { i18nListPayload } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,10 +46,13 @@ export function GlossaryForm({
   defaultValues,
   id,
   mode,
+  originalDefinicaoLonga,
 }: {
   defaultValues?: Partial<GlossaryFormData>;
   id?: string;
   mode: "create" | "edit";
+  /** Valor original de `definicaoLonga` ({ pt, en }): a tradução em inglês é preservada ao salvar. */
+  originalDefinicaoLonga?: unknown;
 }) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -88,7 +92,8 @@ export function GlossaryForm({
           .split(/\n\s*\n/)
           .map((s) => s.trim())
           .filter(Boolean),
-        en: null,
+        // Preserva a tradução em inglês que já existia (nunca grava null por cima).
+        en: i18nListPayload(originalDefinicaoLonga, []).en,
       },
       termosRelacionados:
         data.termosRelacionadosText
@@ -111,7 +116,7 @@ export function GlossaryForm({
 
   async function onDelete() {
     if (!id) return;
-    if (!confirm("Deletar este termo? Esta ação não pode ser desfeita.")) return;
+    if (!confirm("Excluir este termo? Esta ação não pode ser desfeita.")) return;
     try {
       await api.delete(`/cms/admin/glossary/${id}`);
       router.push("/dashboard/glossario");
@@ -123,8 +128,11 @@ export function GlossaryForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl space-y-5">
       <div className="space-y-1">
-        <Label htmlFor="slug">Slug (URL)</Label>
+        <Label htmlFor="slug">Endereço do termo (slug)</Label>
         <Input id="slug" {...register("slug")} placeholder="ex: iso-4406" />
+        <p className="text-[11px] text-muted-foreground">
+          Parte final do link do termo (/glossario/<b>endereço</b>). Letras minúsculas sem acento, números e hífens.
+        </p>
         {errors.slug && (
           <p className="text-xs text-destructive">{errors.slug.message}</p>
         )}
@@ -199,7 +207,7 @@ export function GlossaryForm({
 
       <div className="space-y-1">
         <Label htmlFor="termosRelacionadosText">
-          Termos relacionados (slugs separados por vírgula)
+          Termos relacionados (endereços dos outros termos, separados por vírgula)
         </Label>
         <Input
           id="termosRelacionadosText"
@@ -226,6 +234,10 @@ export function GlossaryForm({
         </div>
       )}
 
+      <p className="text-[11px] text-muted-foreground">
+        Em produção, a mudança aparece no site em até 60 segundos.
+      </p>
+
       <div className="flex items-center justify-between border-t pt-4">
         <div className="flex gap-2">
           <Button type="submit" disabled={isSubmitting}>
@@ -249,7 +261,7 @@ export function GlossaryForm({
             disabled={isSubmitting}
           >
             <Trash2 className="mr-1 h-3 w-3" />
-            Deletar
+            Excluir
           </Button>
         )}
       </div>

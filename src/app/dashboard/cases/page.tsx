@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { api } from "@/lib/api";
 import { tx } from "@/lib/i18n";
+import { EQUIPAMENTOS, PROBLEMAS, SETORES, labelOf } from "@/lib/taxonomy";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -71,7 +72,7 @@ export default function CasesPage() {
                   </span>
                 </div>
                 <CardDescription className="text-xs">
-                  {c.setorSlug} · {c.equipamentoSlug} · {c.problemaSlug} · {c.ano}
+                  {labelOf(SETORES, c.setorSlug)} · {labelOf(EQUIPAMENTOS, c.equipamentoSlug)} · {labelOf(PROBLEMAS, c.problemaSlug)} · {c.ano}
                 </CardDescription>
               </CardHeader>
               <CardContent>

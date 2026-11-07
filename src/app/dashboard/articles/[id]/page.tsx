@@ -3,28 +3,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
+import { ptText } from "@/lib/i18n";
 import { PageHeader } from "@/components/page-header";
-import { ArticleForm } from "@/components/article-form";
-
-type ArticleFull = {
-  id: string;
-  slug: string;
-  title: { pt: string; en: string | null };
-  excerpt: { pt: string; en: string | null };
-  categoriaSlug: string;
-  tags: string[];
-  autorNome: string;
-  autorCargo: { pt: string; en: string | null };
-  publicadoEm: string;
-  tempoLeituraMin: number;
-  heroImageUrl: string | null;
-  destaque: boolean;
-  content: unknown;
-  seoTitle: { pt: string; en: string | null } | null;
-  seoDescription: { pt: string; en: string | null } | null;
-  ogImageUrl: string | null;
-  published: boolean;
-};
+import { ArticleForm, type ArticleFull } from "@/components/article-form";
 
 export default function EditArticlePage() {
   const params = useParams<{ id: string }>();
@@ -42,41 +23,15 @@ export default function EditArticlePage() {
   if (error) return <div className="text-sm text-destructive">{error}</div>;
   if (!item) return <div className="text-sm text-muted-foreground">Carregando...</div>;
 
-  const content = Array.isArray(item.content)
-    ? item.content
-    : item.content && typeof item.content === "object" &&
-        Array.isArray((item.content as Record<string, unknown>).pt)
-      ? (item.content as Record<string, unknown>).pt
-      : [];
-
+  // O conteúdo pode estar no formato antigo ({ pt: [...] }) ou como lista: o formulário
+  // lê os dois sem perder blocos, e as traduções (en) dos textos são preservadas.
   return (
     <div>
       <PageHeader
-        title={`Editar artigo: ${item.title.pt}`}
-        description={`Slug atual: /${item.slug}`}
+        title={`Editar artigo: ${ptText(item.title)}`}
+        description={`Endereço atual: /blog/${item.slug}`}
       />
-      <ArticleForm
-        mode="edit"
-        id={item.id}
-        defaultValues={{
-          slug: item.slug,
-          titlePt: item.title.pt,
-          excerptPt: item.excerpt.pt,
-          categoriaSlug: item.categoriaSlug,
-          tagsText: (item.tags ?? []).join(", "),
-          autorNome: item.autorNome,
-          autorCargoPt: item.autorCargo.pt,
-          publicadoEm: new Date(item.publicadoEm).toISOString().slice(0, 10),
-          tempoLeituraMin: item.tempoLeituraMin,
-          heroImageUrl: item.heroImageUrl ?? "",
-          destaque: item.destaque,
-          contentJson: JSON.stringify(content, null, 2),
-          seoTitleText: item.seoTitle?.pt ?? "",
-          seoDescriptionText: item.seoDescription?.pt ?? "",
-          ogImageUrl: item.ogImageUrl ?? "",
-          published: item.published,
-        }}
-      />
+      <ArticleForm mode="edit" original={item} />
     </div>
   );
 }

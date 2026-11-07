@@ -3,26 +3,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
+import { ptText } from "@/lib/i18n";
 import { PageHeader } from "@/components/page-header";
-import { SectorForm } from "@/components/sector-form";
-
-type SectorFull = {
-  id: string;
-  slug: string;
-  nome: { pt: string; en: string | null };
-  tagline: { pt: string; en: string | null };
-  descricao: { pt: string; en: string | null };
-  heroImageUrl: string | null;
-  equipamentosTipicos: unknown[];
-  problemasComuns: unknown[];
-  regulamentacao: unknown[];
-  faqs: unknown[] | null;
-  seoTitle: { pt: string; en: string | null } | null;
-  seoDescription: { pt: string; en: string | null } | null;
-  ogImageUrl: string | null;
-  published: boolean;
-  displayOrder: number;
-};
+import { SectorForm, type SectorFull } from "@/components/sector-form";
 
 export default function EditSetorPage() {
   const params = useParams<{ id: string }>();
@@ -43,29 +26,10 @@ export default function EditSetorPage() {
   return (
     <div>
       <PageHeader
-        title={`Editar setor: ${item.nome.pt}`}
-        description={`Slug atual: /${item.slug}`}
+        title={`Editar setor: ${ptText(item.nome)}`}
+        description={`Endereço atual: /industrias/${item.slug}`}
       />
-      <SectorForm
-        mode="edit"
-        id={item.id}
-        defaultValues={{
-          slug: item.slug,
-          nomePt: item.nome.pt,
-          taglinePt: item.tagline.pt,
-          descricaoPt: item.descricao.pt,
-          heroImageUrl: item.heroImageUrl ?? "",
-          equipamentosJson: JSON.stringify(item.equipamentosTipicos ?? [], null, 2),
-          problemasJson: JSON.stringify(item.problemasComuns ?? [], null, 2),
-          regulamentacaoJson: JSON.stringify(item.regulamentacao ?? [], null, 2),
-          faqsJson: JSON.stringify(item.faqs ?? [], null, 2),
-          seoTitleText: item.seoTitle?.pt ?? "",
-          seoDescriptionText: item.seoDescription?.pt ?? "",
-          ogImageUrl: item.ogImageUrl ?? "",
-          published: item.published,
-          displayOrder: item.displayOrder,
-        }}
-      />
+      <SectorForm mode="edit" original={item} />
     </div>
   );
 }
