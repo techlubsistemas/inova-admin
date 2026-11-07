@@ -19,6 +19,7 @@ import {
   Menu,
   Scale,
   ClipboardList,
+  GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +55,10 @@ const groups = [
       { href: "/dashboard/leads", label: "Leads", icon: Inbox },
       { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
     ],
+  },
+  {
+    label: "Ajuda",
+    items: [{ href: "/dashboard/aulas", label: "Aulas", icon: GraduationCap }],
   },
   {
     label: "Conta",
